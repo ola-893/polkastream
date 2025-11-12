@@ -7,6 +7,7 @@ mod polkadot_stream {
     /// Structure to hold all data for a single stream
     #[derive(Debug, Clone)]
     #[ink::scale_derive(Encode, Decode, TypeInfo)]
+    #[cfg_attr(feature = "std", derive(ink::storage::traits::StorageLayout))]
     pub struct Stream {
         sender: AccountId,
         recipient: AccountId,
