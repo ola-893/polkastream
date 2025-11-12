@@ -119,8 +119,12 @@ mod polkadot_stream {
             let stop_time = start_time.saturating_add(duration.saturating_mul(1000));
             
             // Calculate flow rate per millisecond - convert duration to u128 for division
-            let duration_ms = (duration as u128).saturating_mul(1000);
-            let flow_rate = transferred_value.saturating_div(duration_ms);
+            let duration_ms = u128::from(duration).saturating_mul(1000);
+            let flow_rate = if duration_ms == 0 {
+                return Err(Error::InvalidDuration);
+            } else {
+                transferred_value.saturating_div(duration_ms)
+            };
             if flow_rate == 0 {
                 return Err(Error::ZeroFlowRate);
             }
