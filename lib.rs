@@ -76,6 +76,12 @@ mod polkadot_stream {
 
     pub type Result<T> = core::result::Result<T, Error>;
 
+    impl Default for PolkadotStream {
+        fn default() -> Self {
+            Self::new()
+        }
+    }
+
     impl PolkadotStream {
         /// Constructor
         #[ink(constructor)]
