@@ -113,14 +113,14 @@ mod polkadot_stream {
             }
 
             let stream_id = self.next_stream_id;
-            self.next_stream_id += 1;
+            self.next_stream_id = self.next_stream_id.saturating_add(1);
 
             let start_time = self.env().block_timestamp();
-            let stop_time = start_time + (duration * 1000); // Convert seconds to milliseconds
+            let stop_time = start_time.saturating_add(duration.saturating_mul(1000));
             
             // Calculate flow rate per millisecond - convert duration to u128 for division
-            let duration_ms = (duration as u128) * 1000;
-            let flow_rate = transferred_value / duration_ms;
+            let duration_ms = (duration as u128).saturating_mul(1000);
+            let flow_rate = transferred_value.saturating_div(duration_ms);
             if flow_rate == 0 {
                 return Err(Error::ZeroFlowRate);
             }
@@ -236,17 +236,17 @@ mod polkadot_stream {
             self.streams.insert(stream_id, &stream);
 
             // Transfer to recipient if they have balance
-            if recipient_balance > 0 {
-                if self.env().transfer(stream.recipient, recipient_balance).is_err() {
-                    return Err(Error::TransferFailed);
-                }
+            if recipient_balance > 0
+                && self.env().transfer(stream.recipient, recipient_balance).is_err()
+            {
+                return Err(Error::TransferFailed);
             }
 
             // Refund sender if they have balance
-            if sender_balance > 0 {
-                if self.env().transfer(stream.sender, sender_balance).is_err() {
-                    return Err(Error::TransferFailed);
-                }
+            if sender_balance > 0
+                && self.env().transfer(stream.sender, sender_balance).is_err()
+            {
+                return Err(Error::TransferFailed);
             }
 
             self.env().emit_event(StreamCancelled {
@@ -282,7 +282,6 @@ mod polkadot_stream {
             let mut contract = PolkadotStream::new();
             let accounts = ink::env::test::default_accounts::<ink::env::DefaultEnvironment>();
             
-            // Set caller and transferred value
             ink::env::test::set_caller::<ink::env::DefaultEnvironment>(accounts.alice);
             ink::env::test::set_value_transferred::<ink::env::DefaultEnvironment>(1000);
 
@@ -301,7 +300,6 @@ mod polkadot_stream {
 
             let stream_id = contract.create_stream(accounts.bob, 100).unwrap();
             
-            // Advance time
             ink::env::test::advance_block::<ink::env::DefaultEnvironment>();
             
             let balance = contract.get_claimable_balance(stream_id);
@@ -318,10 +316,8 @@ mod polkadot_stream {
 
             let stream_id = contract.create_stream(accounts.bob, 100).unwrap();
             
-            // Advance time
             ink::env::test::advance_block::<ink::env::DefaultEnvironment>();
             
-            // Switch to recipient
             ink::env::test::set_caller::<ink::env::DefaultEnvironment>(accounts.bob);
             
             let result = contract.withdraw_from_stream(stream_id);
