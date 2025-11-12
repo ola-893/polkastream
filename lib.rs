@@ -120,11 +120,13 @@ mod polkadot_stream {
             
             // Calculate flow rate per millisecond - convert duration to u128 for division
             let duration_ms = u128::from(duration).saturating_mul(1000);
-            let flow_rate = if duration_ms == 0 {
+            if duration_ms == 0 {
                 return Err(Error::InvalidDuration);
-            } else {
-                transferred_value.saturating_div(duration_ms)
-            };
+            }
+            
+            let flow_rate = transferred_value.checked_div(duration_ms)
+                .ok_or(Error::InvalidDuration)?;
+            
             if flow_rate == 0 {
                 return Err(Error::ZeroFlowRate);
             }
