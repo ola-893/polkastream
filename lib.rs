@@ -2,15 +2,11 @@
 
 #[ink::contract]
 mod polkadot_stream {
-    use ink::prelude::vec::Vec;
     use ink::storage::Mapping;
 
     /// Structure to hold all data for a single stream
-    #[derive(Debug, Clone, scale::Encode, scale::Decode)]
-    #[cfg_attr(
-        feature = "std",
-        derive(scale_info::TypeInfo, ink::storage::traits::StorageLayout)
-    )]
+    #[derive(Debug, Clone)]
+    #[ink::scale_derive(Encode, Decode, TypeInfo)]
     pub struct Stream {
         sender: AccountId,
         recipient: AccountId,
@@ -62,8 +58,8 @@ mod polkadot_stream {
     }
 
     /// Errors
-    #[derive(Debug, PartialEq, Eq, scale::Encode, scale::Decode)]
-    #[cfg_attr(feature = "std", derive(scale_info::TypeInfo))]
+    #[derive(Debug, PartialEq, Eq)]
+    #[ink::scale_derive(Encode, Decode, TypeInfo)]
     pub enum Error {
         StreamNotActive,
         NotRecipient,
@@ -115,8 +111,9 @@ mod polkadot_stream {
             let start_time = self.env().block_timestamp();
             let stop_time = start_time + (duration * 1000); // Convert seconds to milliseconds
             
-            // Calculate flow rate per millisecond
-            let flow_rate = transferred_value / (duration * 1000);
+            // Calculate flow rate per millisecond - convert duration to u128 for division
+            let duration_ms = (duration as u128) * 1000;
+            let flow_rate = transferred_value / duration_ms;
             if flow_rate == 0 {
                 return Err(Error::ZeroFlowRate);
             }
@@ -164,12 +161,12 @@ mod polkadot_stream {
 
             // If current time is after stop time, full remaining amount is claimable
             if current_time >= stream.stop_time {
-                return Ok(stream.total_amount - stream.amount_withdrawn);
+                return Ok(stream.total_amount.saturating_sub(stream.amount_withdrawn));
             }
 
             // Calculate streamed amount based on time elapsed
-            let time_elapsed = current_time - stream.start_time;
-            let streamed_amount = time_elapsed as u128 * stream.flow_rate;
+            let time_elapsed = current_time.saturating_sub(stream.start_time);
+            let streamed_amount = (time_elapsed as u128).saturating_mul(stream.flow_rate);
             
             Ok(streamed_amount.saturating_sub(stream.amount_withdrawn))
         }
@@ -193,7 +190,7 @@ mod polkadot_stream {
                 return Err(Error::NoFundsToWithdraw);
             }
 
-            stream.amount_withdrawn += claimable_amount;
+            stream.amount_withdrawn = stream.amount_withdrawn.saturating_add(claimable_amount);
             self.streams.insert(stream_id, &stream);
 
             // Transfer funds to recipient
@@ -225,8 +222,8 @@ mod polkadot_stream {
             }
 
             let recipient_balance = self.get_claimable_balance(stream_id)?;
-            let sender_balance = (stream.total_amount - stream.amount_withdrawn)
-                .saturating_sub(recipient_balance);
+            let total_remaining = stream.total_amount.saturating_sub(stream.amount_withdrawn);
+            let sender_balance = total_remaining.saturating_sub(recipient_balance);
 
             stream.is_active = false;
             self.streams.insert(stream_id, &stream);
@@ -265,7 +262,7 @@ mod polkadot_stream {
         /// Get total number of streams created
         #[ink(message)]
         pub fn get_stream_count(&self) -> u64 {
-            self.next_stream_id - 1
+            self.next_stream_id.saturating_sub(1)
         }
     }
 
@@ -293,7 +290,7 @@ mod polkadot_stream {
             let accounts = ink::env::test::default_accounts::<ink::env::DefaultEnvironment>();
             
             ink::env::test::set_caller::<ink::env::DefaultEnvironment>(accounts.alice);
-            ink::env::test::set_value_transferred::<ink::env::DefaultEnvironment>(1000);
+            ink::env::test::set_value_transferred::<ink::env::DefaultEnvironment>(100000);
 
             let stream_id = contract.create_stream(accounts.bob, 100).unwrap();
             
@@ -302,6 +299,26 @@ mod polkadot_stream {
             
             let balance = contract.get_claimable_balance(stream_id);
             assert!(balance.is_ok());
+        }
+
+        #[ink::test]
+        fn withdraw_works() {
+            let mut contract = PolkadotStream::new();
+            let accounts = ink::env::test::default_accounts::<ink::env::DefaultEnvironment>();
+            
+            ink::env::test::set_caller::<ink::env::DefaultEnvironment>(accounts.alice);
+            ink::env::test::set_value_transferred::<ink::env::DefaultEnvironment>(100000);
+
+            let stream_id = contract.create_stream(accounts.bob, 100).unwrap();
+            
+            // Advance time
+            ink::env::test::advance_block::<ink::env::DefaultEnvironment>();
+            
+            // Switch to recipient
+            ink::env::test::set_caller::<ink::env::DefaultEnvironment>(accounts.bob);
+            
+            let result = contract.withdraw_from_stream(stream_id);
+            assert!(result.is_ok());
         }
     }
 }
