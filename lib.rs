@@ -3,19 +3,20 @@
 #[ink::contract]
 mod polkadot_stream {
     use ink::storage::Mapping;
+    use ink::primitives::{U256, H160};
 
     /// Structure to hold all data for a single stream
     #[derive(Debug, Clone)]
     #[ink::scale_derive(Encode, Decode, TypeInfo)]
     #[cfg_attr(feature = "std", derive(ink::storage::traits::StorageLayout))]
     pub struct Stream {
-        sender: AccountId,
-        recipient: AccountId,
-        total_amount: Balance,
-        flow_rate: Balance,
+        sender: H160,
+        recipient: H160,
+        total_amount: U256,
+        flow_rate: U256,
         start_time: Timestamp,
         stop_time: Timestamp,
-        amount_withdrawn: Balance,
+        amount_withdrawn: U256,
         is_active: bool,
     }
 
@@ -31,10 +32,10 @@ mod polkadot_stream {
         #[ink(topic)]
         stream_id: u64,
         #[ink(topic)]
-        sender: AccountId,
+        sender: H160,
         #[ink(topic)]
-        recipient: AccountId,
-        total_amount: Balance,
+        recipient: H160,
+        total_amount: U256,
         start_time: Timestamp,
         stop_time: Timestamp,
     }
@@ -44,18 +45,18 @@ mod polkadot_stream {
         #[ink(topic)]
         stream_id: u64,
         #[ink(topic)]
-        recipient: AccountId,
-        amount: Balance,
+        recipient: H160,
+        amount: U256,
     }
 
     #[ink(event)]
     pub struct StreamCancelled {
         #[ink(topic)]
         stream_id: u64,
-        sender: AccountId,
-        recipient: AccountId,
-        sender_balance: Balance,
-        recipient_balance: Balance,
+        sender: H160,
+        recipient: H160,
+        sender_balance: U256,
+        recipient_balance: U256,
     }
 
     /// Errors
@@ -96,18 +97,22 @@ mod polkadot_stream {
         #[ink(message, payable)]
         pub fn create_stream(
             &mut self,
-            recipient: AccountId,
+            recipient: H160,
             duration: u64,
         ) -> Result<u64> {
             let transferred_value = self.env().transferred_value();
             
             // Validations
-            if transferred_value == 0 {
+            if transferred_value == U256::zero() {
                 return Err(Error::InvalidAmount);
             }
-            if recipient == AccountId::from([0x0; 32]) {
+            
+            // Check if recipient is zero address
+            let zero_address = H160::from([0x0; 20]);
+            if recipient == zero_address {
                 return Err(Error::InvalidRecipient);
             }
+            
             if duration == 0 {
                 return Err(Error::InvalidDuration);
             }
@@ -118,16 +123,16 @@ mod polkadot_stream {
             let start_time = self.env().block_timestamp();
             let stop_time = start_time.saturating_add(duration.saturating_mul(1000));
             
-            // Calculate flow rate per millisecond - convert duration to u128 for division
-            let duration_ms = u128::from(duration).saturating_mul(1000);
-            if duration_ms == 0 {
+            // Calculate flow rate per millisecond
+            let duration_ms = U256::from(duration).saturating_mul(U256::from(1000));
+            if duration_ms == U256::zero() {
                 return Err(Error::InvalidDuration);
             }
             
             let flow_rate = transferred_value.checked_div(duration_ms)
                 .ok_or(Error::InvalidDuration)?;
             
-            if flow_rate == 0 {
+            if flow_rate == U256::zero() {
                 return Err(Error::ZeroFlowRate);
             }
 
@@ -138,7 +143,7 @@ mod polkadot_stream {
                 flow_rate,
                 start_time,
                 stop_time,
-                amount_withdrawn: 0,
+                amount_withdrawn: U256::zero(),
                 is_active: true,
             };
 
@@ -158,7 +163,7 @@ mod polkadot_stream {
 
         /// Calculates the claimable balance for a stream
         #[ink(message)]
-        pub fn get_claimable_balance(&self, stream_id: u64) -> Result<Balance> {
+        pub fn get_claimable_balance(&self, stream_id: u64) -> Result<U256> {
             let stream = self.streams.get(stream_id).ok_or(Error::StreamNotFound)?;
 
             if !stream.is_active {
@@ -169,7 +174,7 @@ mod polkadot_stream {
 
             // If current time is before start time
             if current_time < stream.start_time {
-                return Ok(0);
+                return Ok(U256::zero());
             }
 
             // If current time is after stop time, full remaining amount is claimable
@@ -179,7 +184,7 @@ mod polkadot_stream {
 
             // Calculate streamed amount based on time elapsed
             let time_elapsed = current_time.saturating_sub(stream.start_time);
-            let streamed_amount = (time_elapsed as u128).saturating_mul(stream.flow_rate);
+            let streamed_amount = U256::from(time_elapsed).saturating_mul(stream.flow_rate);
             
             Ok(streamed_amount.saturating_sub(stream.amount_withdrawn))
         }
@@ -199,7 +204,7 @@ mod polkadot_stream {
             }
 
             let claimable_amount = self.get_claimable_balance(stream_id)?;
-            if claimable_amount == 0 {
+            if claimable_amount == U256::zero() {
                 return Err(Error::NoFundsToWithdraw);
             }
 
@@ -242,14 +247,14 @@ mod polkadot_stream {
             self.streams.insert(stream_id, &stream);
 
             // Transfer to recipient if they have balance
-            if recipient_balance > 0
+            if recipient_balance > U256::zero()
                 && self.env().transfer(stream.recipient, recipient_balance).is_err()
             {
                 return Err(Error::TransferFailed);
             }
 
             // Refund sender if they have balance
-            if sender_balance > 0
+            if sender_balance > U256::zero()
                 && self.env().transfer(stream.sender, sender_balance).is_err()
             {
                 return Err(Error::TransferFailed);
@@ -289,7 +294,7 @@ mod polkadot_stream {
             let accounts = ink::env::test::default_accounts::<ink::env::DefaultEnvironment>();
             
             ink::env::test::set_caller::<ink::env::DefaultEnvironment>(accounts.alice);
-            ink::env::test::set_value_transferred::<ink::env::DefaultEnvironment>(1000);
+            ink::env::test::set_value_transferred::<ink::env::DefaultEnvironment>(U256::from(1000));
 
             let result = contract.create_stream(accounts.bob, 100);
             assert!(result.is_ok());
@@ -302,7 +307,7 @@ mod polkadot_stream {
             let accounts = ink::env::test::default_accounts::<ink::env::DefaultEnvironment>();
             
             ink::env::test::set_caller::<ink::env::DefaultEnvironment>(accounts.alice);
-            ink::env::test::set_value_transferred::<ink::env::DefaultEnvironment>(100000);
+            ink::env::test::set_value_transferred::<ink::env::DefaultEnvironment>(U256::from(100000));
 
             let stream_id = contract.create_stream(accounts.bob, 100).unwrap();
             
@@ -318,7 +323,7 @@ mod polkadot_stream {
             let accounts = ink::env::test::default_accounts::<ink::env::DefaultEnvironment>();
             
             ink::env::test::set_caller::<ink::env::DefaultEnvironment>(accounts.alice);
-            ink::env::test::set_value_transferred::<ink::env::DefaultEnvironment>(100000);
+            ink::env::test::set_value_transferred::<ink::env::DefaultEnvironment>(U256::from(100000));
 
             let stream_id = contract.create_stream(accounts.bob, 100).unwrap();
             
