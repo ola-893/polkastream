@@ -6,261 +6,29 @@
   html, body, #root {
     @apply h-full;
   }
-  body {
-    @apply bg-gradient-to-br from-slate-950 via-blue-950 to-cyan-950 text-cyan-50 antialiased;
-    font-family: 'Inter', sans-serif;
-    background-image: 
-      radial-gradient(circle at 20% 50%, rgba(6, 182, 212, 0.15) 0%, transparent 50%),
-      radial-gradient(circle at 80% 80%, rgba(59, 130, 246, 0.15) 0%, transparent 50%),
-      linear-gradient(180deg, transparent 0%, rgba(6, 182, 212, 0.05) 100%);
-    animation: liquidFlow 15s ease-in-out infinite;
-  }
   
-  @keyframes liquidFlow {
-    0%, 100% {
-      background-position: 0% 0%;
-    }
-    50% {
-      background-position: 100% 100%;
-    }
+  body {
+    @apply bg-gradient-to-br from-slate-950 via-slate-900 to-slate-950 text-slate-100 antialiased;
+    font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
   }
 }
 
 @layer components {
-  .card-flow {
-    @apply rounded-3xl border border-cyan-500/20 bg-slate-900/60 backdrop-blur-xl shadow-2xl relative overflow-hidden;
-    box-shadow: 
-      0 0 30px rgba(6, 182, 212, 0.1),
-      inset 0 0 30px rgba(6, 182, 212, 0.05);
+  /* Clean input styles */
+  input:focus,
+  select:focus {
+    @apply outline-none;
   }
   
-  .card-flow::before {
-    content: '';
-    position: absolute;
-    top: -50%;
-    left: -50%;
-    width: 200%;
-    height: 200%;
-    background: radial-gradient(circle, rgba(6, 182, 212, 0.1) 0%, transparent 70%);
-    animation: ripple 8s linear infinite;
+  /* Smooth transitions */
+  button,
+  input,
+  select {
+    @apply transition-colors duration-200;
   }
   
-  @keyframes ripple {
-    0% {
-      transform: translate(0, 0) scale(1);
-      opacity: 0.5;
-    }
-    100% {
-      transform: translate(50%, 50%) scale(1.5);
-      opacity: 0;
-    }
-  }
-  
-  .btn-flow {
-    @apply inline-flex items-center justify-center rounded-2xl bg-gradient-to-r from-cyan-500 to-blue-500 px-6 py-3 font-semibold text-white shadow-lg transition-all relative overflow-hidden;
-    box-shadow: 0 0 20px rgba(6, 182, 212, 0.4);
-  }
-  
-  .btn-flow::before {
-    content: '';
-    position: absolute;
-    top: -50%;
-    left: -50%;
-    width: 200%;
-    height: 200%;
-    background: linear-gradient(45deg, transparent, rgba(255, 255, 255, 0.3), transparent);
-    animation: shimmer 3s infinite;
-  }
-  
-  @keyframes shimmer {
-    0% {
-      transform: translateX(-100%) translateY(-100%) rotate(45deg);
-    }
-    100% {
-      transform: translateX(100%) translateY(100%) rotate(45deg);
-    }
-  }
-  
-  .btn-flow:hover {
-    @apply scale-105;
-    box-shadow: 0 0 30px rgba(6, 182, 212, 0.6);
-  }
-  
-  .btn-secondary {
-    @apply inline-flex items-center justify-center rounded-2xl bg-slate-800/50 px-5 py-2.5 font-medium text-cyan-200 hover:bg-slate-800/70 border border-cyan-500/30 transition-all;
-  }
-  
-  .btn-secondary:hover {
-    box-shadow: 0 0 15px rgba(6, 182, 212, 0.2);
-  }
-  
-  .btn-danger {
-    @apply inline-flex items-center justify-center rounded-2xl bg-gradient-to-r from-red-500 to-pink-500 px-5 py-2.5 font-semibold text-white hover:from-red-600 hover:to-pink-600 transition-all;
-  }
-  
-  .chip-flow {
-    @apply rounded-full bg-cyan-500/10 px-4 py-1.5 text-sm font-medium text-cyan-300 border border-cyan-500/30;
-    backdrop-filter: blur(10px);
-  }
-  
-  .text-liquid {
-    @apply text-transparent bg-clip-text bg-gradient-to-r from-cyan-400 via-blue-400 to-cyan-400;
-    background-size: 200% auto;
-    animation: liquidText 4s linear infinite;
-  }
-  
-  @keyframes liquidText {
-    0% {
-      background-position: 0% center;
-    }
-    100% {
-      background-position: 200% center;
-    }
-  }
-  
-  .droplet {
-    animation: fall 3s ease-in-out infinite;
-  }
-  
-  @keyframes fall {
-    0% {
-      transform: translateY(0) scaleY(1);
-      opacity: 0;
-    }
-    10% {
-      opacity: 1;
-    }
-    90% {
-      opacity: 1;
-    }
-    100% {
-      transform: translateY(30px) scaleY(1.2);
-      opacity: 0;
-    }
-  }
-  
-  input, select {
-    @apply bg-slate-900/50 border border-cyan-500/30 text-cyan-50 placeholder:text-cyan-700;
-    backdrop-filter: blur(10px);
-  }
-  
-  input:focus, select:focus {
-    @apply border-cyan-400 ring-2 ring-cyan-400/30 outline-none;
-    box-shadow: 0 0 20px rgba(6, 182, 212, 0.2);
-  }
-  
-  .wave-bg {
-    position: absolute;
-    width: 100%;
-    height: 100%;
-    opacity: 0.1;
-  }
-  
-  .wave {
-    position: absolute;
-    width: 200%;
-    height: 200%;
-    background: radial-gradient(circle, rgba(6, 182, 212, 0.3) 0%, transparent 50%);
-    animation: wave 10s ease-in-out infinite;
-  }
-  
-  @keyframes wave {
-    0%, 100% {
-      transform: translate(-25%, -25%) scale(1);
-    }
-    50% {
-      transform: translate(-50%, -50%) scale(1.1);
-    }
-  }
-  
-  .stream-line {
-    position: absolute;
-    height: 2px;
-    background: linear-gradient(90deg, transparent, rgba(6, 182, 212, 0.5), transparent);
-    animation: streamFlow 3s linear infinite;
-  }
-  
-  @keyframes streamFlow {
-    0% {
-      left: -100%;
-      width: 50%;
-    }
-    100% {
-      left: 100%;
-      width: 50%;
-    }
-  }
-  
-  .progress-flow {
-    @apply h-3 w-full overflow-hidden rounded-full bg-slate-900/50 border border-cyan-500/20;
-    position: relative;
-  }
-  
-  .progress-flow-fill {
-    @apply h-full bg-gradient-to-r from-cyan-500 via-blue-500 to-cyan-500;
-    background-size: 200% 100%;
-    animation: flowProgress 2s linear infinite;
-    box-shadow: 0 0 10px rgba(6, 182, 212, 0.5);
-  }
-  
-  @keyframes flowProgress {
-    0% {
-      background-position: 0% 0%;
-    }
-    100% {
-      background-position: 200% 0%;
-    }
-  }
-  
-  .bubble {
-    position: absolute;
-    bottom: 0;
-    background: radial-gradient(circle, rgba(6, 182, 212, 0.3), transparent);
-    border-radius: 50%;
-    animation: bubble 4s ease-in-out infinite;
-  }
-  
-  @keyframes bubble {
-    0% {
-      transform: translateY(0) scale(0);
-      opacity: 0;
-    }
-    10% {
-      opacity: 1;
-    }
-    90% {
-      opacity: 1;
-    }
-    100% {
-      transform: translateY(-100px) scale(1);
-      opacity: 0;
-    }
-  }
-  
-  .liquid-border {
-    position: relative;
-  }
-  
-  .liquid-border::after {
-    content: '';
-    position: absolute;
-    inset: 0;
-    border-radius: inherit;
-    padding: 2px;
-    background: linear-gradient(45deg, #06b6d4, #3b82f6, #06b6d4);
-    -webkit-mask: linear-gradient(#fff 0 0) content-box, linear-gradient(#fff 0 0);
-    -webkit-mask-composite: xor;
-    mask-composite: exclude;
-    background-size: 200% 200%;
-    animation: liquidBorder 3s linear infinite;
-  }
-  
-  @keyframes liquidBorder {
-    0% {
-      background-position: 0% 50%;
-    }
-    100% {
-      background-position: 200% 50%;
-    }
+  /* Disabled state */
+  button:disabled {
+    @apply cursor-not-allowed opacity-50;
   }
 }
