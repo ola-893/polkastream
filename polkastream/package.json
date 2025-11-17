@@ -4,6 +4,7 @@
   "type": "module",
   "scripts": {
     "dev": "vite",
+    "prebuild": "npx papi add passetHub -w wss://passet-hub-paseo.ibp.network && npx papi add-contract polkadot_stream polkadot_stream.json",
     "build": "vite build",
     "preview": "vite preview"
   },
