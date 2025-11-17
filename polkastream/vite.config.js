@@ -9,6 +9,15 @@ export default defineConfig({
   },
   build: {
     outDir: 'dist',
-    sourcemap: true
+    sourcemap: true,
+    commonjsOptions: {
+      include: [/@polkadot-api/, /node_modules/]
+    }
+  },
+  optimizeDeps: {
+    include: ['@polkadot-api/descriptors'],
+    esbuildOptions: {
+      target: 'esnext'
+    }
   }
 })
