@@ -161,6 +161,16 @@ mod polkadot_stream {
             Ok(stream_id)
         }
 
+        /// Helper to get caller as H160
+        fn get_caller_h160(&self) -> H160 {
+            // In Revive, env().caller() returns AccountId32
+            // We need to convert it to H160 by taking first 20 bytes
+            let caller_id = self.env().caller();
+            // AccountId32 is 32 bytes, H160 is 20 bytes
+            // Take the first 20 bytes
+            H160::from_slice(&caller_id.as_ref()[..20])
+        }
+
         /// Calculates the claimable balance for a stream
         #[ink(message)]
         pub fn get_claimable_balance(&self, stream_id: u64) -> Result<U256> {
@@ -198,7 +208,7 @@ mod polkadot_stream {
                 return Err(Error::StreamNotActive);
             }
 
-            let caller = self.env().caller();
+            let caller = self.get_caller_h160();
             if caller != stream.recipient {
                 return Err(Error::NotRecipient);
             }

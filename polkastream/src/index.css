@@ -32,3 +32,51 @@
     @apply cursor-not-allowed opacity-50;
   }
 }
+
+
+  .btn-flow {
+    @apply inline-flex items-center justify-center rounded-2xl bg-gradient-to-r from-cyan-500 to-blue-500 px-6 py-3 font-semibold text-white shadow-lg transition-all relative overflow-hidden;
+    box-shadow: 0 0 20px rgba(6, 182, 212, 0.4);
+  }
+  
+  .btn-flow::before {
+    content: '';
+    position: absolute;
+    top: -50%;
+    left: -50%;
+    width: 200%;
+    height: 200%;
+    background: linear-gradient(45deg, transparent, rgba(255, 255, 255, 0.3), transparent);
+    animation: shimmer 3s infinite;
+  }
+  
+  @keyframes shimmer {
+    0% {
+      transform: translateX(-100%) translateY(-100%) rotate(45deg);
+    }
+    100% {
+      transform: translateX(100%) translateY(100%) rotate(45deg);
+    }
+  }
+  
+  .btn-flow:hover {
+    @apply scale-105;
+    box-shadow: 0 0 30px rgba(6, 182, 212, 0.6);
+  }
+  
+  .btn-secondary {
+    @apply inline-flex items-center justify-center rounded-2xl bg-slate-800/50 px-5 py-2.5 font-medium text-cyan-200 hover:bg-slate-800/70 border border-cyan-500/30 transition-all;
+  }
+  
+  .btn-secondary:hover {
+    box-shadow: 0 0 15px rgba(6, 182, 212, 0.2);
+  }
+  
+  .btn-danger {
+    @apply inline-flex items-center justify-center rounded-2xl bg-gradient-to-r from-red-500 to-pink-500 px-5 py-2.5 font-semibold text-white hover:from-red-600 hover:to-pink-600 transition-all;
+  }
+  @layer components {
+   .btn-primary {
+    @apply inline-flex items-center justify-center rounded-xl bg-gradient-to-r from-cyan-500 to-violet-500 px-5 py-2.5 font-semibold text-white transition hover:opacity-90 active:opacity-80;
+  }
+}
